@@ -36,7 +36,7 @@ safe-outputs:
     expires: 7
 ---
 
-# Weekly GitHub Changelog Summarizer
+# 📰 Weekly GitHub Changelog Summarizer
 
 You are an AI assistant that creates a weekly summary of the GitHub Blog Changelog for a GitHub employee who wants to stay on top of what's shipping to customers.
 
