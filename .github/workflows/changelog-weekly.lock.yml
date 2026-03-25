@@ -23,7 +23,7 @@
 #
 # gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"a2cb4a6f08d1120441cdc18114cdb27f6bc96923ef681d8c0aee3c7eeaf8b398","compiler_version":"v0.63.1","strict":true,"agent_id":"copilot"}
 
-name: "Weekly GitHub Changelog Summarizer"
+name: "📰 Weekly GitHub Changelog Summarizer"
 "on":
   schedule:
   - cron: "0 10 * * 2"
@@ -46,7 +46,7 @@ permissions: {}
 concurrency:
   group: "gh-aw-${{ github.workflow }}"
 
-run-name: "Weekly GitHub Changelog Summarizer"
+run-name: "📰 Weekly GitHub Changelog Summarizer"
 
 jobs:
   activation:
@@ -73,7 +73,7 @@ jobs:
           GH_AW_INFO_VERSION: "latest"
           GH_AW_INFO_AGENT_VERSION: "latest"
           GH_AW_INFO_CLI_VERSION: "v0.63.1"
-          GH_AW_INFO_WORKFLOW_NAME: "Weekly GitHub Changelog Summarizer"
+          GH_AW_INFO_WORKFLOW_NAME: "📰 Weekly GitHub Changelog Summarizer"
           GH_AW_INFO_EXPERIMENTAL: "false"
           GH_AW_INFO_SUPPORTS_TOOLS_ALLOWLIST: "true"
           GH_AW_INFO_STAGED: "false"
@@ -801,7 +801,7 @@ jobs:
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          WORKFLOW_NAME: "Weekly GitHub Changelog Summarizer"
+          WORKFLOW_NAME: "📰 Weekly GitHub Changelog Summarizer"
           WORKFLOW_DESCRIPTION: "No description provided"
           HAS_PATCH: ${{ steps.collect_output.outputs.has_patch }}
         with:
@@ -932,7 +932,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_NOOP_MAX: "1"
-          GH_AW_WORKFLOW_NAME: "Weekly GitHub Changelog Summarizer"
+          GH_AW_WORKFLOW_NAME: "📰 Weekly GitHub Changelog Summarizer"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -945,7 +945,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Weekly GitHub Changelog Summarizer"
+          GH_AW_WORKFLOW_NAME: "📰 Weekly GitHub Changelog Summarizer"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -959,7 +959,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Weekly GitHub Changelog Summarizer"
+          GH_AW_WORKFLOW_NAME: "📰 Weekly GitHub Changelog Summarizer"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_WORKFLOW_ID: "changelog-weekly"
@@ -982,7 +982,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
-          GH_AW_WORKFLOW_NAME: "Weekly GitHub Changelog Summarizer"
+          GH_AW_WORKFLOW_NAME: "📰 Weekly GitHub Changelog Summarizer"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_MESSAGE: ${{ steps.noop.outputs.noop_message }}
@@ -1008,7 +1008,7 @@ jobs:
       GH_AW_ENGINE_ID: "copilot"
       GH_AW_ENGINE_MODEL: ${{ needs.agent.outputs.model }}
       GH_AW_WORKFLOW_ID: "changelog-weekly"
-      GH_AW_WORKFLOW_NAME: "Weekly GitHub Changelog Summarizer"
+      GH_AW_WORKFLOW_NAME: "📰 Weekly GitHub Changelog Summarizer"
     outputs:
       code_push_failure_count: ${{ steps.process_safe_outputs.outputs.code_push_failure_count }}
       code_push_failure_errors: ${{ steps.process_safe_outputs.outputs.code_push_failure_errors }}
