@@ -21,7 +21,7 @@
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"d85a89d9c99a062ef294abbac78499b76d3e4e9be15f4dd6b9d71bc94316a7a5","compiler_version":"v0.63.1","strict":true,"agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"f6aa5d7203bbcc8e3b52c05a64dbaa1a8de95d03bbc955be4d901a2dc63f7185","compiler_version":"v0.63.1","strict":true,"agent_id":"copilot"}
 
 name: "Changelog Post Summarizer"
 "on":
@@ -76,7 +76,7 @@ jobs:
           GH_AW_INFO_EXPERIMENTAL: "false"
           GH_AW_INFO_SUPPORTS_TOOLS_ALLOWLIST: "true"
           GH_AW_INFO_STAGED: "false"
-          GH_AW_INFO_ALLOWED_DOMAINS: '["defaults","github"]'
+          GH_AW_INFO_ALLOWED_DOMAINS: '["defaults","github","github.blog"]'
           GH_AW_INFO_FIREWALL_ENABLED: "true"
           GH_AW_INFO_AWF_VERSION: "v0.25.0"
           GH_AW_INFO_AWMG_VERSION: ""

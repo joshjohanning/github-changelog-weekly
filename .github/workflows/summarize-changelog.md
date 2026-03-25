@@ -19,6 +19,7 @@ network:
   allowed:
     - defaults
     - github
+    - "github.blog"
 
 safe-outputs:
   add-comment:

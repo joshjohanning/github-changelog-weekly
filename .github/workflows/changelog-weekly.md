@@ -25,6 +25,7 @@ network:
   allowed:
     - defaults
     - github
+    - "github.blog"
 
 safe-outputs:
   create-issue:
