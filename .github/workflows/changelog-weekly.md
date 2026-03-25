@@ -20,7 +20,7 @@ steps:
     run: curl -s "https://github.blog/changelog/feed/" > changelog-feed.xml
 
 tools:
-  bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut"]
+  bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut", "python3"]
   github:
     toolsets: [issues]
 
