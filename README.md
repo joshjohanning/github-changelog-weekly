@@ -99,8 +99,7 @@ Edit the `safe-outputs.create-issue.assignees` field in `changelog-weekly.md` an
 ### Labels
 
 The weekly issue is automatically labeled with:
-- `changelog-weekly`
-- `automated`
+- `changelog-summary`
 
 ## How It Works
 
