@@ -9,9 +9,19 @@ permissions:
   contents: read
   issues: read
 
+steps:
+  - name: Extract URL and fetch changelog post
+    env:
+      COMMENT_TEXT: "${{ steps.sanitized.outputs.text }}"
+    run: |
+      URL=$(echo "$COMMENT_TEXT" | grep -oE 'https://github\.blog/changelog/[^ ]*' | head -1)
+      if [ -n "$URL" ]; then
+        curl -s "$URL" > changelog-post.html
+        echo "$URL" > changelog-post-url.txt
+      fi
+
 tools:
-  web-fetch:
-  bash: ["echo", "cat", "head", "tail", "grep", "curl", "sed"]
+  bash: ["echo", "cat", "head", "tail", "grep", "sed"]
   github:
     toolsets: [issues]
 
@@ -19,7 +29,6 @@ network:
   allowed:
     - defaults
     - github
-    - "github.blog"
 
 safe-outputs:
   add-comment:
@@ -36,12 +45,12 @@ You are an AI assistant that provides detailed summaries of individual GitHub Bl
 
 1. **Parse the command** from the context: "${{ steps.sanitized.outputs.text }}"
 2. **Extract the URL** — the user will comment something like `/summarize https://github.blog/changelog/2026-03-25-some-title`
-3. **Fetch the full post content** from the provided URL using `web-fetch`
+3. **Read the pre-fetched post content** from `changelog-post.html` in the workspace (the URL is saved in `changelog-post-url.txt`)
 4. **Create a detailed summary** as a comment on the issue
 
 ## How to Handle the Input
 
-The sanitized text will contain the user's comment. Look for a URL in the format `https://github.blog/changelog/...`. If no valid URL is found, post a helpful comment explaining the expected usage:
+The changelog post has been pre-fetched into `changelog-post.html` and the URL saved to `changelog-post-url.txt`. Check if `changelog-post.html` exists and has content using `cat`. If the file is empty or missing, the user likely didn't include a valid URL — post a helpful comment explaining the expected usage:
 
 ```
 👋 To use this command, comment with a changelog URL:

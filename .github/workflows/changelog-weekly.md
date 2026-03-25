@@ -15,9 +15,12 @@ permissions:
   contents: read
   issues: read
 
+steps:
+  - name: Fetch changelog RSS feed
+    run: curl -s "https://github.blog/changelog/feed/" > changelog-feed.xml
+
 tools:
-  web-fetch:
-  bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "curl", "sed", "awk", "tr", "cut"]
+  bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut"]
   github:
     toolsets: [issues]
 
@@ -25,7 +28,6 @@ network:
   allowed:
     - defaults
     - github
-    - "github.blog"
 
 safe-outputs:
   create-issue:
@@ -42,14 +44,14 @@ You are an AI assistant that creates a weekly summary of the GitHub Blog Changel
 
 ## Your Task
 
-1. **Fetch the changelog RSS feed** from `https://github.blog/changelog/feed/`
+1. **Read the pre-fetched changelog RSS feed** from `changelog-feed.xml` in the workspace
 2. **Filter entries** to only those published in the last ${{ github.event.inputs.days_back || '7' }} days
 3. **Analyze and summarize** the most impactful entries
 4. **Create a well-formatted GitHub Issue** with the summary
 
-## How to Fetch the Feed
+## How to Read the Feed
 
-Use the `web-fetch` tool or `curl` to fetch `https://github.blog/changelog/feed/`. Parse the XML to extract each `<item>` with its title, link, pubDate, description, content, category type (from `<category domain="changelog-type">`), and category labels/tags (from `<category domain="changelog-label">`).
+The RSS feed has been pre-fetched and saved to `changelog-feed.xml` in the workspace. Use `cat changelog-feed.xml` to read it. Parse the XML to extract each `<item>` with its title, link, pubDate, description, content, category type (from `<category domain="changelog-type">`), and category labels/tags (from `<category domain="changelog-label">`).
 
 ## How to Structure the Issue
 
