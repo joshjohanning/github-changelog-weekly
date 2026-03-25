@@ -56,7 +56,7 @@ The RSS feed has been pre-fetched and saved to `changelog-feed.xml` in the works
 ## How to Structure the Issue
 
 ### Title
-Use this format: `Week of [START_DATE] – [END_DATE]`
+Use this exact format: `Week of Mon DD, YYYY – Mon DD, YYYY` (e.g., `Week of Mar 19, 2026 – Mar 25, 2026`). Use the abbreviated 3-letter month name (Jan, Feb, Mar, etc.). The start date should be exactly 7 days before today, and the end date should be today.
 
 The safe-output will automatically prepend "[Changelog Weekly] " to the title.
 
