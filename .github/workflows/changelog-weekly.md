@@ -1,6 +1,8 @@
 ---
 on:
-  schedule: weekly on tuesday around 10am utc-5
+  schedule:
+    - cron: "0 10 * * 2"
+      timezone: "America/Chicago"
   workflow_dispatch:
     inputs:
       days_back:
