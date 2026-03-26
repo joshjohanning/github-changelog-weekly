@@ -64,6 +64,8 @@ def fetch_page(page=1):
 
 Parse each `<item>` to extract its title, link, pubDate, description, content, category type (from `<category domain="changelog-type">`), and category labels/tags (from `<category domain="changelog-label">`).
 
+**Important: Deduplicate entries by their `<link>` URL.** Paginated RSS feeds can return overlapping items across pages. Use the link as a unique key and skip any item you've already seen.
+
 ## How to Structure the Issue
 
 ### Title
