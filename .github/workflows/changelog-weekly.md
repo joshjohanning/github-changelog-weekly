@@ -126,17 +126,17 @@ Skip this section if nothing needs attention.
 
 #### 4. 📋 Complete Changelog Reference
 
-Create a table of ALL entries from the week, grouped by tag/label. Each entry should appear under every tag it belongs to.
+Create a table of ALL entries from the week. Each entry should appear once with all its tags listed.
 
-Format as a Markdown table:
+Format as a Markdown table with **4 columns** — keep the title as plain text for readability, with the link in a separate column:
 
 ```
-### 📋 All Entries This Week
+### 📋 Complete Changelog Reference
 
 | Entry | Category | Tags | Link |
 |-------|----------|------|------|
 | Title of entry | Improvement | `copilot`, `enterprise` | [Read more](url) |
-| Title of entry | New Release | `actions` | [Read more](url) |
+| Title of entry | Release | `actions` | [Read more](url) |
 | ... | ... | ... | ... |
 ```
 
