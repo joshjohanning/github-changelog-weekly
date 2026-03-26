@@ -13,6 +13,7 @@ tools:
   bash: ["echo", "cat", "head", "tail", "grep", "sed", "python3"]
   github:
     toolsets: [issues]
+    min-integrity: none
 
 network:
   allowed:
