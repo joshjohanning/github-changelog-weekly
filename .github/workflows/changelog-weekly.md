@@ -19,6 +19,7 @@ tools:
   bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut", "python3"]
   github:
     toolsets: [issues]
+    min-integrity: none
 
 network:
   allowed:
