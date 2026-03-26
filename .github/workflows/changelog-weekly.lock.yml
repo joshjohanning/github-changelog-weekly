@@ -21,7 +21,7 @@
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"f2136807fdddc0af685f629c2ad0ec5b9d527ef3618b5007c4cc6475f1895c95","compiler_version":"v0.63.1","strict":true,"agent_id":"copilot"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"a3308b9b029137f92b2904a9ef95397b6353b42a1878b8fb2e9e904435b7f4e3","compiler_version":"v0.63.1","strict":true,"agent_id":"copilot"}
 
 name: "📰 Weekly GitHub Changelog Summarizer"
 "on":
@@ -77,7 +77,7 @@ jobs:
           GH_AW_INFO_EXPERIMENTAL: "false"
           GH_AW_INFO_SUPPORTS_TOOLS_ALLOWLIST: "true"
           GH_AW_INFO_STAGED: "false"
-          GH_AW_INFO_ALLOWED_DOMAINS: '["defaults","github"]'
+          GH_AW_INFO_ALLOWED_DOMAINS: '["defaults","github","github.blog"]'
           GH_AW_INFO_FIREWALL_ENABLED: "true"
           GH_AW_INFO_AWF_VERSION: "v0.25.0"
           GH_AW_INFO_AWMG_VERSION: ""
@@ -290,9 +290,6 @@ jobs:
         run: bash ${RUNNER_TEMP}/gh-aw/actions/configure_gh_for_ghe.sh
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Fetch changelog RSS feed
-        run: curl -s "https://github.blog/changelog/feed/" > changelog-feed.xml
-
       - name: Configure Git credentials
         env:
           REPO_NAME: ${{ github.repository }}

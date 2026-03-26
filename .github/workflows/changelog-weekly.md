@@ -15,10 +15,6 @@ permissions:
   contents: read
   issues: read
 
-steps:
-  - name: Fetch changelog RSS feed
-    run: curl -s "https://github.blog/changelog/feed/" > changelog-feed.xml
-
 tools:
   bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut", "python3"]
   github:
@@ -28,6 +24,7 @@ network:
   allowed:
     - defaults
     - github
+    - github.blog
 
 safe-outputs:
   create-issue:
@@ -43,14 +40,29 @@ You are an AI assistant that creates a weekly summary of the GitHub Blog Changel
 
 ## Your Task
 
-1. **Read the pre-fetched changelog RSS feed** from `changelog-feed.xml` in the workspace
+1. **Fetch the changelog RSS feed** using `python3` with `urllib.request` (see below)
 2. **Filter entries** to only those published in the last ${{ github.event.inputs.days_back || '7' }} days
 3. **Analyze and summarize** the most impactful entries
 4. **Create a well-formatted GitHub Issue** with the summary
 
-## How to Read the Feed
+## How to Fetch the Feed
 
-The RSS feed has been pre-fetched and saved to `changelog-feed.xml` in the workspace. Use `cat changelog-feed.xml` to read it. Parse the XML to extract each `<item>` with its title, link, pubDate, description, content, category type (from `<category domain="changelog-type">`), and category labels/tags (from `<category domain="changelog-label">`).
+**Use `python3` with `urllib.request`** to fetch the RSS feed. Do NOT use `web-fetch` or `curl` — they are blocked by the sandbox firewall. Python's `urllib.request` works because it routes through the network proxy automatically.
+
+The feed is at `https://github.blog/changelog/feed/` and paginates via `?paged=2`, `?paged=3`, etc. (~10 items per page). Fetch pages until you get a 404 or no `<item>` elements are found.
+
+Example approach:
+```python
+import urllib.request
+import xml.etree.ElementTree as ET
+
+def fetch_page(page=1):
+    url = f"https://github.blog/changelog/feed/?paged={page}" if page > 1 else "https://github.blog/changelog/feed/"
+    req = urllib.request.Request(url, headers={"User-Agent": "GitHub-Changelog-Bot/1.0"})
+    return urllib.request.urlopen(req, timeout=15).read().decode("utf-8")
+```
+
+Parse each `<item>` to extract its title, link, pubDate, description, content, category type (from `<category domain="changelog-type">`), and category labels/tags (from `<category domain="changelog-label">`).
 
 ## How to Structure the Issue
 
@@ -147,3 +159,4 @@ _cc @joshjohanning_
 - If the RSS feed has no entries in the time range, create an issue noting "No new changelog entries this week" with a brief note
 - The goal is to save time — the reader should get 80% of the value from the highlights section alone, and use the reference table to drill into specifics
 - Focus on what matters for GitHub employees: customer impact, platform changes, new capabilities, deprecations
+- **Do NOT write to `/tmp/gh-aw/`** — that directory is read-only. Use `/tmp/` directly for any temp files (e.g., `/tmp/changelog-data.json`)
