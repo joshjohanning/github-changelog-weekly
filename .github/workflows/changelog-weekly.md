@@ -149,8 +149,6 @@ End with:
 ```
 ---
 _This summary was auto-generated from the [GitHub Changelog RSS feed](https://github.blog/changelog/). Use `/summarize <url>` on this issue to get a deeper dive into any specific entry._
-
-_cc @joshjohanning_
 ```
 
 ## Important Guidelines
