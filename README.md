@@ -20,17 +20,19 @@ An AI agent automatically:
 
 ### 💬 On-Demand Deep Dives (`/summarize`)
 
-See an entry you want to know more about? Comment on any issue:
+Want a deeper dive on a specific entry? Comment on **any issue in this repo**:
 
 ```
 /summarize https://github.blog/changelog/2026-03-25-some-feature
 ```
 
-The AI will fetch the full post and reply with a detailed breakdown:
+The AI agent will fetch the full post and reply with a detailed comment:
 - **TL;DR** — Executive summary
 - **What Changed** — Technical details and scope
 - **Why It Matters** — Customer impact analysis
 - **Action Items** — Steps to take (if any)
+
+> **💡 Tip:** This works great on the weekly summary issues — see an entry in the reference table you want more detail on? Just grab its URL and `/summarize` it right there in the comments.
 
 ## Setup
 
