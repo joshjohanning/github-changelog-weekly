@@ -129,19 +129,19 @@ Skip this section if nothing needs attention.
 
 Create a table of ALL entries from the week. Each entry should appear once with all its tags listed.
 
-Format as a Markdown table with **4 columns** — keep the title as plain text for readability, with the link in a separate column:
+Format as a Markdown table with **5 columns** — include the publish date, keep the title as plain text for readability, with the link in a separate column:
 
 ```
 ### 📋 Complete Changelog Reference
 
-| Entry | Category | Tags | Link |
-|-------|----------|------|------|
-| Title of entry | Improvement | `copilot`, `enterprise` | [Read more](url) |
-| Title of entry | Release | `actions` | [Read more](url) |
-| ... | ... | ... | ... |
+| Date | Entry | Category | Tags | Link |
+|------|-------|----------|------|------|
+| Mar 25 | Title of entry | Improvement | `copilot`, `enterprise` | [Read more](url) |
+| Mar 24 | Title of entry | Release | `actions` | [Read more](url) |
+| ... | ... | ... | ... | ... |
 ```
 
-Sort the table by tags alphabetically, so entries with similar tags are grouped together. If an entry has multiple tags, list it once with all its tags.
+Sort the table by date (newest first). Use short date format without year (e.g., `Mar 25`). If an entry has multiple tags, list it once with all its tags.
 
 #### 5. Footer
 
