@@ -1,12 +1,12 @@
 {
   "servers": {
     "github-agentic-workflows": {
-      "command": "gh",
+      "type": "stdio",
+      "command": "/opt/homebrew/bin/gh",
       "args": [
         "aw",
         "mcp-server"
-      ],
-      "cwd": "${workspaceFolder}"
+      ]
     }
   }
 }
