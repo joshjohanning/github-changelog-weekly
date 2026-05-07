@@ -15,7 +15,136 @@ permissions:
   contents: read
   issues: read
 
+engine:
+  id: copilot
+  model: claude-haiku-4.5
+
 timeout-minutes: 20
+
+steps:
+  - name: Compute changelog date range
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      GITHUB_EVENT_NAME: ${{ github.event_name }}
+      DAYS_BACK: ${{ github.event.inputs.days_back || '7' }}
+      TZ: America/Chicago
+    run: |
+      python3 <<'PY'
+      import json
+      import os
+      import re
+      import urllib.parse
+      import urllib.request
+      from datetime import datetime, timedelta
+      from pathlib import Path
+      from zoneinfo import ZoneInfo
+
+      token = os.environ["GITHUB_TOKEN"]
+      repo = os.environ["GITHUB_REPOSITORY"]
+      event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+      days_back_raw = os.environ.get("DAYS_BACK", "7").strip() or "7"
+      try:
+          days_back = int(days_back_raw)
+      except ValueError:
+          days_back = 7
+
+      today = datetime.now(ZoneInfo(os.environ.get("TZ", "UTC"))).date()
+      manual_override = event_name == "workflow_dispatch" and days_back != 7
+
+      def api(path, query=None):
+          url = f"https://api.github.com{path}"
+          if query:
+              url += "?" + urllib.parse.urlencode(query)
+          req = urllib.request.Request(
+              url,
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "github-changelog-weekly-date-range",
+              },
+          )
+          with urllib.request.urlopen(req, timeout=15) as response:
+              return json.loads(response.read().decode("utf-8"))
+
+      def parse_issue_end_date(title):
+          match = re.search(
+              r"([A-Z][a-z]{2} \d{1,2}, \d{4})\s*[–-]\s*([A-Z][a-z]{2} \d{1,2}, \d{4})",
+              title,
+          )
+          if not match:
+              return None
+          return datetime.strptime(match.group(2), "%b %d, %Y").date()
+
+      def issue_title(start_date, end_date):
+          date_range = f"{start_date:%b} {start_date.day}, {start_date:%Y} – {end_date:%b} {end_date.day}, {end_date:%Y}"
+          if (end_date - start_date).days == 6:
+              return f"Week of {date_range}"
+          return date_range
+
+      previous = None
+      if not manual_override:
+          issues = api(
+              f"/repos/{repo}/issues",
+              {
+                  "state": "all",
+                  "labels": "changelog-summary",
+                  "sort": "created",
+                  "direction": "desc",
+                  "per_page": "30",
+              },
+          )
+          for issue in issues:
+              if "pull_request" in issue:
+                  continue
+              title = issue.get("title", "")
+              if not title.startswith("[Changelog] "):
+                  continue
+              end_date = parse_issue_end_date(title)
+              if not end_date:
+                  continue
+              previous = {
+                  "number": issue["number"],
+                  "title": title,
+                  "url": issue["html_url"],
+                  "end_date": end_date.isoformat(),
+              }
+              break
+
+      if manual_override:
+          start = today - timedelta(days=max(days_back, 1) - 1)
+          end = today
+          mode = "manual_override"
+      elif previous:
+          previous_end = datetime.fromisoformat(previous["end_date"]).date()
+          if previous_end >= today:
+              start = today
+              end = today
+              mode = "noop"
+          else:
+              start = previous_end + timedelta(days=1)
+              end = min(start + timedelta(days=6), today)
+              mode = "backfill"
+      else:
+          start = today - timedelta(days=max(days_back, 1) - 1)
+          end = today
+          mode = "fallback"
+
+      output = {
+          "mode": mode,
+          "start_date": start.isoformat(),
+          "end_date": end.isoformat(),
+          "title": issue_title(start, end),
+          "days_back": days_back,
+          "previous_issue": previous,
+      }
+
+      out_path = Path("/tmp/gh-aw/agent/changelog-date-range.json")
+      out_path.parent.mkdir(parents=True, exist_ok=True)
+      out_path.write_text(json.dumps(output, indent=2) + "\n")
+      print(json.dumps(output, indent=2))
+      PY
 
 tools:
   bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut", "python3"]
@@ -42,7 +171,7 @@ You are an AI assistant that creates a weekly summary of the GitHub Blog Changel
 
 ## Your Task
 
-1. **Determine the target date range** for this summary (see below)
+1. **Read the precomputed target date range** from `/tmp/gh-aw/agent/changelog-date-range.json` (see below)
 2. **Fetch the changelog RSS feed** using `python3` with `urllib.request` (see below)
 3. **Filter entries** to only those published in the target date range
 4. **Analyze and summarize** the most impactful entries
@@ -50,21 +179,12 @@ You are an AI assistant that creates a weekly summary of the GitHub Blog Changel
 
 ## How to Choose the Date Range
 
-This workflow should backfill missed weekly runs instead of always summarizing the latest posts.
+This workflow backfills missed weekly runs instead of always summarizing the latest posts. A deterministic pre-agent step has already calculated the range and written it to `/tmp/gh-aw/agent/changelog-date-range.json`.
 
-1. Look for the most recent existing changelog summary issue in this repository:
-   - It should have the `changelog-summary` label
-   - Its title should start with `[Changelog] `
-   - Its title should contain a date range like `Week of Apr 28, 2026 – May 4, 2026` or `Apr 28, 2026 – May 4, 2026`
-2. If you find a previous summary issue, parse the end date from its title and summarize the **next 7 calendar days**:
-   - Target start date = the day after the previous issue's end date
-   - Target end date = 6 days after the target start date
-   - If that target end date is in the future, use today as the target end date
-3. If no previous summary issue exists, fall back to the last ${{ github.event.inputs.days_back || '7' }} days ending today.
-4. If a manual `workflow_dispatch` run sets `days_back` to a value other than `7`, treat that as an explicit override and summarize that many days ending today instead of backfilling.
-5. If the previous summary issue already covers today or a future date, do not create a duplicate issue. Use `noop` to report that the changelog summary is already up to date.
-
-Use the target date range consistently for filtering, the issue title, the quick stats, and the "No new changelog entries" fallback.
+1. Read and parse `/tmp/gh-aw/agent/changelog-date-range.json` before fetching the RSS feed.
+2. Use `start_date`, `end_date`, and `title` from that file as the source of truth for filtering, the issue title, quick stats, and the "No new changelog entries" fallback.
+3. If `mode` is `noop`, do not create a duplicate changelog issue. Use `noop` to report that the changelog summary is already up to date, including the `previous_issue` title and URL if present.
+4. If the file is missing or unreadable, fall back to the last ${{ github.event.inputs.days_back || '7' }} days ending today.
 
 ## How to Fetch the Feed
 
