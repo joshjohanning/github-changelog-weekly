@@ -24,6 +24,7 @@ safe-outputs:
     private-key: ${{ secrets.APP_PRIVATE_KEY }}
   add-comment:
     max: 1
+    discussions: false
   create-pull-request:
     title-prefix: "[q] "
     labels: [automation, workflow-optimization]
