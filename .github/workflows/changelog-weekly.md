@@ -15,6 +15,8 @@ permissions:
   contents: read
   issues: read
 
+timeout-minutes: 20
+
 tools:
   bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut", "python3"]
   github:
