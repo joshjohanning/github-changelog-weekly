@@ -18,6 +18,10 @@ permissions:
 network: defaults
 
 safe-outputs:
+  report-failure-as-issue: false
+  github-app:
+    client-id: ${{ vars.APP_CLIENT_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
   add-comment:
     max: 1
   create-pull-request:
@@ -25,6 +29,13 @@ safe-outputs:
     labels: [automation, workflow-optimization]
     draft: false
     if-no-changes: "ignore"
+    allow-workflows: true
+    allowed-files:
+      - ".github/workflows/*.md"
+      - ".github/workflows/*.lock.yml"
+      - ".github/workflows/agentics-maintenance.yml"
+      - ".github/aw/actions-lock.json"
+    protected-files: allowed
 
 tools:
   agentic-workflows:
