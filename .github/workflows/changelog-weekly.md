@@ -40,10 +40,29 @@ You are an AI assistant that creates a weekly summary of the GitHub Blog Changel
 
 ## Your Task
 
-1. **Fetch the changelog RSS feed** using `python3` with `urllib.request` (see below)
-2. **Filter entries** to only those published in the last ${{ github.event.inputs.days_back || '7' }} days
-3. **Analyze and summarize** the most impactful entries
-4. **Create a well-formatted GitHub Issue** with the summary
+1. **Determine the target date range** for this summary (see below)
+2. **Fetch the changelog RSS feed** using `python3` with `urllib.request` (see below)
+3. **Filter entries** to only those published in the target date range
+4. **Analyze and summarize** the most impactful entries
+5. **Create a well-formatted GitHub Issue** with the summary
+
+## How to Choose the Date Range
+
+This workflow should backfill missed weekly runs instead of always summarizing the latest posts.
+
+1. Look for the most recent existing changelog summary issue in this repository:
+   - It should have the `changelog-summary` label
+   - Its title should start with `[Changelog] `
+   - Its title should contain a date range like `Week of Apr 28, 2026 – May 4, 2026` or `Apr 28, 2026 – May 4, 2026`
+2. If you find a previous summary issue, parse the end date from its title and summarize the **next 7 calendar days**:
+   - Target start date = the day after the previous issue's end date
+   - Target end date = 6 days after the target start date
+   - If that target end date is in the future, use today as the target end date
+3. If no previous summary issue exists, fall back to the last ${{ github.event.inputs.days_back || '7' }} days ending today.
+4. If a manual `workflow_dispatch` run sets `days_back` to a value other than `7`, treat that as an explicit override and summarize that many days ending today instead of backfilling.
+5. If the previous summary issue already covers today or a future date, do not create a duplicate issue. Use `noop` to report that the changelog summary is already up to date.
+
+Use the target date range consistently for filtering, the issue title, the quick stats, and the "No new changelog entries" fallback.
 
 ## How to Fetch the Feed
 
@@ -69,11 +88,11 @@ Parse each `<item>` to extract its title, link, pubDate, description, content, c
 ## How to Structure the Issue
 
 ### Title
-Adapt the title based on the time range:
-- If 7 days (default): `Week of Mar 19, 2026 – Mar 25, 2026`
-- If other values: `Mar 1, 2026 – Mar 25, 2026` (just the date range, no "Week of")
+Adapt the title based on the target date range:
+- If the target range is exactly 7 days: `Week of Mar 19, 2026 – Mar 25, 2026`
+- If the target range is not exactly 7 days: `Mar 1, 2026 – Mar 25, 2026` (just the date range, no "Week of")
 
-Use abbreviated 3-letter month names (Jan, Feb, Mar, etc.). The start date should be exactly ${{ github.event.inputs.days_back || '7' }} days before today, and the end date should be today.
+Use abbreviated 3-letter month names (Jan, Feb, Mar, etc.). The start and end dates should match the target date range determined above.
 
 The safe-output will automatically prepend "[Changelog] " to the title.
 
