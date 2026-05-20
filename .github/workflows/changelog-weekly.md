@@ -281,7 +281,7 @@ Format as a Markdown table with **5 columns** — include the publish date, keep
 | ... | ... | ... | ... | ... |
 ```
 
-Sort the table by date (newest first). Use short date format without year (e.g., `Mar 25`). If an entry has multiple tags, list it once with all its tags.
+Sort the table by date (newest first). Use short date format without year (e.g., `Mar 25`). If an entry has multiple tags, list it once with all its tags. **Do not trim, truncate, or shorten entry titles in the table.**
 
 #### 5. Footer
 
@@ -297,6 +297,7 @@ _This summary was auto-generated from the [GitHub Changelog RSS feed](https://gi
 - Group and organize information so the issue is scannable
 - Use emoji sparingly but effectively for visual scanning
 - Always include direct hyperlinks to every changelog post
+- Keep table entry titles exact and complete (no truncation with ellipses)
 - If the RSS feed has no entries in the time range, create an issue noting "No new changelog entries this week" with a brief note
 - The goal is to save time — the reader should get 80% of the value from the highlights section alone, and use the reference table to drill into specifics
 - Focus on what matters for GitHub employees: customer impact, platform changes, new capabilities, deprecations
