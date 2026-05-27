@@ -281,7 +281,7 @@ Format as a Markdown table with **5 columns** — include the publish date, keep
 | ... | ... | ... | ... | ... |
 ```
 
-Sort the table by date (newest first). Use short date format without year (e.g., `Mar 25`). If an entry has multiple tags, list it once with all its tags.
+Sort the table by date (newest first). Use short date format without year (e.g., `Mar 25`). If an entry has multiple tags, list it once with all its tags. **Always use the full, untruncated title in the Entry column — never shorten or abbreviate titles.**
 
 #### 5. Footer
 
