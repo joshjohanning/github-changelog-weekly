@@ -18,7 +18,7 @@ permissions:
 runs-on: ubuntu-latest
 runs-on-slim: ubuntu-latest
 
-model: claude-haiku-4.5
+model: claude-sonnet-4.5
 engine:
   id: copilot
 timeout-minutes: 20
@@ -148,6 +148,108 @@ steps:
       print(json.dumps(output, indent=2))
       PY
 
+  - name: Fetch changelog entries
+    run: |
+      python3 <<'PY'
+      import json
+      import re
+      import urllib.error
+      import urllib.request
+      import xml.etree.ElementTree as ET
+      from datetime import date, datetime
+      from email.utils import parsedate_to_datetime
+      from pathlib import Path
+
+      base = Path("/tmp/gh-aw/agent")
+      date_range = json.loads((base / "changelog-date-range.json").read_text())
+      start = date.fromisoformat(date_range["start_date"])
+      end = date.fromisoformat(date_range["end_date"])
+
+      def fetch(page):
+          url = "https://github.blog/changelog/feed/"
+          if page > 1:
+              url += f"?paged={page}"
+          req = urllib.request.Request(url, headers={"User-Agent": "GitHub-Changelog-Bot/1.0"})
+          return urllib.request.urlopen(req, timeout=30).read()
+
+      def strip_html(value):
+          text = re.sub(r"<[^>]+>", " ", value or "")
+          return re.sub(r"\s+", " ", text).strip()
+
+      entries = {}
+      oldest_seen = None
+      for page in range(1, 101):
+          try:
+              raw = fetch(page)
+          except urllib.error.HTTPError as err:
+              if err.code == 404:
+                  break
+              raise
+          items = ET.fromstring(raw).findall(".//item")
+          if not items:
+              break
+          for item in items:
+              link = (item.findtext("link") or "").strip()
+              if not link or link in entries:
+                  continue
+              published = parsedate_to_datetime(item.findtext("pubDate")).date()
+              oldest_seen = published if oldest_seen is None else min(oldest_seen, published)
+              if not (start <= published <= end):
+                  continue
+              categories = item.findall("category")
+              entry_type = next(
+                  (c.text for c in categories if c.get("domain") == "changelog-type" and c.text),
+                  "Other",
+              )
+              tags = [c.text for c in categories if c.get("domain") == "changelog-label" and c.text]
+              entries[link] = {
+                  "title": strip_html(item.findtext("title")),
+                  "link": link,
+                  "date": published.isoformat(),
+                  "type": entry_type,
+                  "tags": tags,
+                  "summary": strip_html(item.findtext("description"))[:1200],
+              }
+          if oldest_seen and oldest_seen < start:
+              break
+
+      sorted_entries = sorted(entries.values(), key=lambda e: (e["date"], e["title"]), reverse=True)
+      counts = {}
+      for entry in sorted_entries:
+          counts[entry["type"]] = counts.get(entry["type"], 0) + 1
+
+      payload = {
+          "start_date": start.isoformat(),
+          "end_date": end.isoformat(),
+          "title": date_range["title"],
+          "total": len(sorted_entries),
+          "counts_by_type": counts,
+          "fetched_at": datetime.utcnow().isoformat() + "Z",
+          "entries": sorted_entries,
+      }
+      (base / "changelog-entries.json").write_text(json.dumps(payload, indent=2) + "\n")
+
+      def short_date(value):
+          parsed = date.fromisoformat(value)
+          return f"{parsed:%b} {parsed.day}"
+
+      def cell(value):
+          return (value or "").replace("|", "\\|")
+
+      rows = [
+          "| Date | Entry | Category | Tags | Link |",
+          "|------|-------|----------|------|------|",
+      ]
+      for entry in sorted_entries:
+          tags = ", ".join(f"`{cell(tag)}`" for tag in entry["tags"]) or "—"
+          rows.append(
+              f"| {short_date(entry['date'])} | {cell(entry['title'])} | {cell(entry['type'])} "
+              f"| {tags} | [Read more]({entry['link']}) |"
+          )
+      (base / "changelog-table.md").write_text("\n".join(rows) + "\n")
+      print(f"Fetched {len(sorted_entries)} entries between {start} and {end}: {counts}")
+      PY
+
 tools:
   bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut", "python3"]
   github:
@@ -174,40 +276,45 @@ You are an AI assistant that creates a weekly summary of the GitHub Blog Changel
 ## Your Task
 
 1. **Read the precomputed target date range** from `/tmp/gh-aw/agent/changelog-date-range.json` (see below)
-2. **Fetch the changelog RSS feed** using `python3` with `urllib.request` (see below)
-3. **Filter entries** to only those published in the target date range
-4. **Analyze and summarize** the most impactful entries
-5. **Create a well-formatted GitHub Issue** with the summary
+2. **Read the precomputed changelog entries** from `/tmp/gh-aw/agent/changelog-entries.json` (see below)
+3. **Analyze and summarize** the most impactful entries
+4. **Create a well-formatted GitHub Issue** with the summary
 
 ## How to Choose the Date Range
 
 This workflow backfills missed weekly runs instead of always summarizing the latest posts. A deterministic pre-agent step has already calculated the range and written it to `/tmp/gh-aw/agent/changelog-date-range.json`.
 
-1. Read and parse `/tmp/gh-aw/agent/changelog-date-range.json` before fetching the RSS feed.
+1. Read and parse `/tmp/gh-aw/agent/changelog-date-range.json` first.
 2. Use `start_date`, `end_date`, and `title` from that file as the source of truth for filtering, the issue title, quick stats, and the "No new changelog entries" fallback.
 3. If `mode` is `noop`, do not create a duplicate changelog issue. Use `noop` to report that the changelog summary is already up to date, including the `previous_issue` title and URL if present.
 4. If the file is missing or unreadable, fall back to the last ${{ github.event.inputs.days_back || '7' }} days ending today.
 
-## How to Fetch the Feed
+## Where the Entry Data Comes From
 
-**Use `python3` with `urllib.request`** to fetch the RSS feed. Do NOT use `web-fetch` or `curl` — they are blocked by the sandbox firewall. Python's `urllib.request` works because it routes through the network proxy automatically.
+A deterministic pre-agent step has already fetched, deduplicated, filtered, and sorted every changelog entry in the target date range. The data is at `/tmp/gh-aw/agent/changelog-entries.json`:
 
-The feed is at `https://github.blog/changelog/feed/` and paginates via `?paged=2`, `?paged=3`, etc. (~10 items per page). Fetch pages until you get a 404 or no `<item>` elements are found.
-
-Example approach:
-```python
-import urllib.request
-import xml.etree.ElementTree as ET
-
-def fetch_page(page=1):
-    url = f"https://github.blog/changelog/feed/?paged={page}" if page > 1 else "https://github.blog/changelog/feed/"
-    req = urllib.request.Request(url, headers={"User-Agent": "GitHub-Changelog-Bot/1.0"})
-    return urllib.request.urlopen(req, timeout=15).read().decode("utf-8")
+```json
+{
+  "start_date": "2026-05-27",
+  "end_date": "2026-07-28",
+  "title": "May 27, 2026 – Jul 28, 2026",
+  "total": 187,
+  "counts_by_type": { "Release": 104, "Improvement": 70 },
+  "entries": [
+    { "title": "...", "link": "https://github.blog/changelog/...", "date": "2026-07-28", "type": "Release", "tags": ["copilot"], "summary": "..." }
+  ]
+}
 ```
 
-Parse each `<item>` to extract its title, link, pubDate, description, content, category type (from `<category domain="changelog-type">`), and category labels/tags (from `<category domain="changelog-label">`).
+A companion file `/tmp/gh-aw/agent/changelog-table.md` contains the **complete, pre-rendered Markdown reference table** for every entry in the range.
 
-**Important: Deduplicate entries by their `<link>` URL.** Paginated RSS feeds can return overlapping items across pages. Use the link as a unique key and skip any item you've already seen.
+**These two files are the ONLY source of truth.**
+
+- Do NOT fetch the RSS feed yourself. Do NOT use `web-fetch` or `curl` — they are blocked by the sandbox firewall.
+- Do NOT invent, guess, or recall any entry, title, URL, date, or tag from memory. Every value you write must be copied verbatim from this file.
+- For the "Complete Changelog Reference" section, `cat /tmp/gh-aw/agent/changelog-table.md` and reproduce its contents **verbatim, in full**. Do not regenerate, re-sort, re-word, shorten, sample, or summarize it, and never replace rows with `...`.
+- Take the entry counts for the stats line from `total` and `counts_by_type`.
+- Before creating the issue, verify that every `https://github.blog/changelog/...` URL in your issue body appears in `changelog-entries.json`. If any does not, you invented it — remove it and start again from the file.
 
 ## How to Structure the Issue
 
@@ -284,6 +391,16 @@ Format as a Markdown table with **5 columns** — include the publish date, keep
 ```
 
 Sort the table by date (newest first). Use short date format without year (e.g., `Mar 25`). If an entry has multiple tags, list it once with all its tags. **Always use the full, untruncated title in the Entry column — never shorten or abbreviate titles.**
+
+**Do not build this table yourself.** Read `/tmp/gh-aw/agent/changelog-table.md` and paste its contents verbatim — it is already sorted newest-first, uses short dates, and contains exactly one row per entry. No exceptions, no `...`, no sampling, no truncation.
+
+**Mandatory verification before you create the issue:**
+
+1. Run `wc -l < /tmp/gh-aw/agent/changelog-table.md` to get the expected line count (header + separator + one row per entry).
+2. Count the table lines in the body you are about to submit. It must match exactly.
+3. Silently dropping rows because the table is long is a failure. If the counts differ, re-read the file and rebuild the section before submitting.
+
+The table is long by design — copying all of it is the single most important part of this task.
 
 #### 5. Footer
 
