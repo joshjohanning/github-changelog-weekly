@@ -15,6 +15,9 @@ permissions:
   contents: read
   issues: read
 
+runs-on: ubuntu-latest
+runs-on-slim: ubuntu-latest
+
 model: claude-haiku-4.5
 engine:
   id: copilot

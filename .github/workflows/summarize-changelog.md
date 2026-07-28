@@ -1,4 +1,7 @@
 ---
+runs-on: ubuntu-latest
+runs-on-slim: ubuntu-latest
+
 on:
   slash_command:
     name: summarize

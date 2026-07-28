@@ -4,6 +4,9 @@ description: |
   An expert system that improves, optimizes, and fixes agentic workflows by investigating performance, 
   identifying missing tools, and detecting inefficiencies.
 
+runs-on: ubuntu-latest
+runs-on-slim: ubuntu-latest
+
 on:
   slash_command:
     name: q
