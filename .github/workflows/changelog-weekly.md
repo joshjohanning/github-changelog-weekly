@@ -15,10 +15,9 @@ permissions:
   contents: read
   issues: read
 
+model: claude-haiku-4.5
 engine:
   id: copilot
-  model: claude-haiku-4.5
-
 timeout-minutes: 20
 
 steps:
@@ -162,7 +161,7 @@ safe-outputs:
     title-prefix: "[Changelog] "
     labels: [changelog-summary]
     assignees: [joshjohanning]
-    expires: 7
+    expires: 7d
 ---
 
 # 📰 Weekly GitHub Changelog Summarizer
