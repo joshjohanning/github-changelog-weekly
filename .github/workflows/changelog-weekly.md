@@ -151,6 +151,7 @@ steps:
   - name: Fetch changelog entries
     run: |
       python3 <<'PY'
+      import html
       import json
       import re
       import urllib.error
@@ -174,7 +175,7 @@ steps:
 
       def strip_html(value):
           text = re.sub(r"<[^>]+>", " ", value or "")
-          return re.sub(r"\s+", " ", text).strip()
+          return html.unescape(re.sub(r"\s+", " ", text).strip())
 
       entries = {}
       oldest_seen = None
@@ -244,7 +245,7 @@ steps:
           tags = ", ".join(f"`{cell(tag)}`" for tag in entry["tags"]) or "—"
           rows.append(
               f"| {short_date(entry['date'])} | {cell(entry['title'])} | {cell(entry['type'])} "
-              f"| {tags} | [Read more]({entry['link']}) |"
+              f"| {tags} | [Changelog]({entry['link']}) |"
           )
       (base / "changelog-table.md").write_text("\n".join(rows) + "\n")
       print(f"Fetched {len(sorted_entries)} entries between {start} and {end}: {counts}")
@@ -385,8 +386,8 @@ Format as a Markdown table with **5 columns** — include the publish date, keep
 
 | Date | Entry | Category | Tags | Link |
 |------|-------|----------|------|------|
-| Mar 25 | Title of entry | Improvement | `copilot`, `enterprise` | [Read more](url) |
-| Mar 24 | Title of entry | Release | `actions` | [Read more](url) |
+| Mar 25 | Title of entry | Improvement | `copilot`, `enterprise` | [Changelog](url) |
+| Mar 24 | Title of entry | Release | `actions` | [Changelog](url) |
 | ... | ... | ... | ... | ... |
 ```
 
