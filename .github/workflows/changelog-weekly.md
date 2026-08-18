@@ -18,7 +18,7 @@ permissions:
 runs-on: ubuntu-latest
 runs-on-slim: ubuntu-latest
 
-model: claude-sonnet-4.5
+model: gpt-5-mini
 engine:
   id: copilot
 timeout-minutes: 20
