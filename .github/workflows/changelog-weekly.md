@@ -1,12 +1,20 @@
 ---
 on:
   schedule:
-    - cron: "0 10 * * 2"
+    - cron: "0 8 * * 1"
       timezone: "America/Chicago"
   workflow_dispatch:
     inputs:
+      start_date:
+        description: 'First changelog publication date to include (YYYY-MM-DD)'
+        required: false
+        type: string
+      end_date:
+        description: 'Last changelog publication date to include (YYYY-MM-DD)'
+        required: false
+        type: string
       days_back:
-        description: 'Number of days to look back for changelog entries (default: 7)'
+        description: 'Fallback number of days when no prior summary exists (default: 7)'
         required: false
         type: string
         default: "7"
@@ -18,7 +26,7 @@ permissions:
 runs-on: ubuntu-latest
 runs-on-slim: ubuntu-latest
 
-model: gpt-5-mini
+model: auto
 engine:
   id: copilot
 timeout-minutes: 20
@@ -29,6 +37,8 @@ steps:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_REPOSITORY: ${{ github.repository }}
       GITHUB_EVENT_NAME: ${{ github.event_name }}
+      START_DATE: ${{ github.event.inputs.start_date || '' }}
+      END_DATE: ${{ github.event.inputs.end_date || '' }}
       DAYS_BACK: ${{ github.event.inputs.days_back || '7' }}
       TZ: America/Chicago
     run: |
@@ -45,6 +55,8 @@ steps:
       token = os.environ["GITHUB_TOKEN"]
       repo = os.environ["GITHUB_REPOSITORY"]
       event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+      start_date_raw = os.environ.get("START_DATE", "").strip()
+      end_date_raw = os.environ.get("END_DATE", "").strip()
       days_back_raw = os.environ.get("DAYS_BACK", "7").strip() or "7"
       try:
           days_back = int(days_back_raw)
@@ -52,7 +64,9 @@ steps:
           days_back = 7
 
       today = datetime.now(ZoneInfo(os.environ.get("TZ", "UTC"))).date()
-      manual_override = event_name == "workflow_dispatch" and days_back != 7
+      explicit_range = event_name == "workflow_dispatch" and (start_date_raw or end_date_raw)
+      if explicit_range and not (start_date_raw and end_date_raw):
+          raise ValueError("start_date and end_date must be provided together")
 
       def api(path, query=None):
           url = f"https://api.github.com{path}"
@@ -86,51 +100,59 @@ steps:
           return date_range
 
       previous = None
-      if not manual_override:
-          issues = api(
-              f"/repos/{repo}/issues",
-              {
-                  "state": "all",
-                  "labels": "changelog-summary",
-                  "sort": "created",
-                  "direction": "desc",
-                  "per_page": "30",
-              },
-          )
-          for issue in issues:
-              if "pull_request" in issue:
-                  continue
-              title = issue.get("title", "")
-              if not title.startswith("[Changelog] "):
-                  continue
-              end_date = parse_issue_end_date(title)
-              if not end_date:
-                  continue
-              previous = {
-                  "number": issue["number"],
-                  "title": title,
-                  "url": issue["html_url"],
-                  "end_date": end_date.isoformat(),
-              }
-              break
+      issues = api(
+          f"/repos/{repo}/issues",
+          {
+              "state": "all",
+              "labels": "changelog-summary",
+              "sort": "created",
+              "direction": "desc",
+              "per_page": "30",
+          },
+      )
+      for issue in issues:
+          if "pull_request" in issue:
+              continue
+          title = issue.get("title", "")
+          if not title.startswith("[Changelog] "):
+              continue
+          end_date = parse_issue_end_date(title)
+          if not end_date:
+              continue
+          previous = {
+              "number": issue["number"],
+              "title": title,
+              "url": issue["html_url"],
+              "end_date": end_date.isoformat(),
+              "covered_urls": sorted(set(re.findall(
+                  r"https://github\.blog/changelog/[^\s)>]+",
+                  issue.get("body", ""),
+              ))),
+          }
+          break
 
-      if manual_override:
-          start = today - timedelta(days=max(days_back, 1) - 1)
-          end = today
+      if explicit_range:
+          start = datetime.fromisoformat(start_date_raw).date()
+          end = datetime.fromisoformat(end_date_raw).date()
+          if start > end:
+              raise ValueError("start_date must not be after end_date")
           mode = "manual_override"
       elif previous:
           previous_end = datetime.fromisoformat(previous["end_date"]).date()
-          if previous_end >= today:
-              start = today
-              end = today
+          latest_complete_date = today - timedelta(days=1)
+          if previous_end >= latest_complete_date:
+              start = latest_complete_date
+              end = latest_complete_date
               mode = "noop"
           else:
-              start = previous_end + timedelta(days=1)
-              end = min(start + timedelta(days=6), today)
+              # Overlap the prior end date, then filter its published URLs so
+              # posts published after that run on the same date are included.
+              start = previous_end
+              end = min(start + timedelta(days=7), latest_complete_date)
               mode = "backfill"
       else:
-          start = today - timedelta(days=max(days_back, 1) - 1)
-          end = today
+          end = today - timedelta(days=1)
+          start = end - timedelta(days=max(days_back, 1) - 1)
           mode = "fallback"
 
       output = {
@@ -165,6 +187,7 @@ steps:
       date_range = json.loads((base / "changelog-date-range.json").read_text())
       start = date.fromisoformat(date_range["start_date"])
       end = date.fromisoformat(date_range["end_date"])
+      covered_urls = set((date_range.get("previous_issue") or {}).get("covered_urls", []))
 
       def fetch(page):
           url = "https://github.blog/changelog/feed/"
@@ -191,7 +214,7 @@ steps:
               break
           for item in items:
               link = (item.findtext("link") or "").strip()
-              if not link or link in entries:
+              if not link or link in entries or link in covered_urls:
                   continue
               published = parsedate_to_datetime(item.findtext("pubDate")).date()
               oldest_seen = published if oldest_seen is None else min(oldest_seen, published)
@@ -288,7 +311,8 @@ This workflow backfills missed weekly runs instead of always summarizing the lat
 1. Read and parse `/tmp/gh-aw/agent/changelog-date-range.json` first.
 2. Use `start_date`, `end_date`, and `title` from that file as the source of truth for filtering, the issue title, quick stats, and the "No new changelog entries" fallback.
 3. If `mode` is `noop`, do not create a duplicate changelog issue. Use `noop` to report that the changelog summary is already up to date, including the `previous_issue` title and URL if present.
-4. If the file is missing or unreadable, fall back to the last ${{ github.event.inputs.days_back || '7' }} days ending today.
+4. The first date may overlap the previous issue's final date. Previously published URLs have already been removed so posts published later on that boundary date are still included.
+5. If the file is missing or unreadable, use `noop` and report the error. Do not guess a date range.
 
 ## Where the Entry Data Comes From
 
@@ -312,10 +336,12 @@ A companion file `/tmp/gh-aw/agent/changelog-table.md` contains the **complete, 
 **These two files are the ONLY source of truth.**
 
 - Do NOT fetch the RSS feed yourself. Do NOT use `web-fetch` or `curl` — they are blocked by the sandbox firewall.
+- Do NOT run Python or any other shell command to transform, select, or draft the data. Read the files directly and compose the issue from them.
 - Do NOT invent, guess, or recall any entry, title, URL, date, or tag from memory. Every value you write must be copied verbatim from this file.
 - For the "Complete Changelog Reference" section, `cat /tmp/gh-aw/agent/changelog-table.md` and reproduce its contents **verbatim, in full**. Do not regenerate, re-sort, re-word, shorten, sample, or summarize it, and never replace rows with `...`.
 - Take the entry counts for the stats line from `total` and `counts_by_type`.
 - Before creating the issue, verify that every `https://github.blog/changelog/...` URL in your issue body appears in `changelog-entries.json`. If any does not, you invented it — remove it and start again from the file.
+- When the summary is ready, call the `create_issue` safe-output tool directly. Do not use `noop` merely because a shell command was denied; `noop` is only valid for `mode: noop`.
 
 ## How to Structure the Issue
 
