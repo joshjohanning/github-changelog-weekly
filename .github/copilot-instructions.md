@@ -7,3 +7,7 @@
 - If you change frontmatter (YAML between `---` markers), you **must** recompile. Markdown body changes take effect at runtime without recompilation, but you should still recompile to keep lock files in sync.
 - **The agent runs in a sandboxed container with a network firewall.** The `web-fetch` built-in tool works for allowed domains listed in `network.allowed`. However, `curl` and other shell commands inside the sandbox are blocked by the firewall. Add specific domains (e.g., `"github.blog"`) to `network.allowed` if the agent needs to fetch from them via `web-fetch`.
 - **For shell-based HTTP requests**, use `mcp-scripts:` which run on the runner host *outside* the agent container with full network access. Do NOT rely on `curl` inside the agent sandbox.
+
+## Repo / Readme maintenance
+
+When adding/changing features, make sure to update the README and any other relevant documentation.

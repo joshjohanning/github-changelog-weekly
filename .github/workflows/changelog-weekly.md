@@ -1,7 +1,7 @@
 ---
 on:
   schedule:
-    - cron: "0 8 * * 1"
+    - cron: "45 6 * * 1"
       timezone: "America/Chicago"
   workflow_dispatch:
     inputs:
@@ -260,17 +260,66 @@ steps:
       def cell(value):
           return (value or "").replace("|", "\\|")
 
-      rows = [
-          "| Date | Entry | Category | Tags | Link |",
-          "|------|-------|----------|------|------|",
+      def markdown_table(entries):
+          rows = [
+              "| Date | Entry | Category | Tags | Link |",
+              "|------|-------|----------|------|------|",
+          ]
+          for entry in entries:
+              tags = ", ".join(f"`{cell(tag)}`" for tag in entry["tags"]) or "—"
+              rows.append(
+                  f"| {short_date(entry['date'])} | {cell(entry['title'])} | {cell(entry['type'])} "
+                  f"| {tags} | [Changelog]({entry['link']}) |"
+              )
+          return rows
+
+      ai_tags = {
+          "ai",
+          "copilot",
+          "github copilot",
+          "github models",
+          "github spark",
+          "models",
+          "spark",
+      }
+      ai_patterns = (
+          r"\b(?:github\s+)?copilot\b",
+          r"\b(?:ai|artificial intelligence|generative ai|ai-powered)\b",
+          r"\bgithub models\b",
+          r"\bmodel context protocol\b",
+          r"\bmcp (?:server|registry)\b",
+          r"\b(?:large language model|llm)s?\b",
+          r"\bcoding agent\b",
+          r"\bagent mode\b",
+          r"\bagentic\b",
+          r"\bgithub spark\b",
+      )
+
+      def is_ai_related(entry):
+          normalized_tags = {tag.casefold().replace("-", " ") for tag in entry["tags"]}
+          if normalized_tags & ai_tags:
+              return True
+          text = f"{entry['title']} {entry['summary']}"
+          return any(re.search(pattern, text, re.IGNORECASE) for pattern in ai_patterns)
+
+      all_rows = markdown_table(sorted_entries)
+      (base / "changelog-table.md").write_text("\n".join(all_rows) + "\n")
+
+      ai_entries = [entry for entry in sorted_entries if is_ai_related(entry)]
+      ai_section = [
+          "### 🤖 Copilot & AI Quick Scan",
+          "",
+          "<details open>",
+          f"<summary><strong>{len(ai_entries)} Copilot or AI-related changelog "
+          f"{'entry' if len(ai_entries) == 1 else 'entries'}</strong></summary>",
+          "",
       ]
-      for entry in sorted_entries:
-          tags = ", ".join(f"`{cell(tag)}`" for tag in entry["tags"]) or "—"
-          rows.append(
-              f"| {short_date(entry['date'])} | {cell(entry['title'])} | {cell(entry['type'])} "
-              f"| {tags} | [Changelog]({entry['link']}) |"
-          )
-      (base / "changelog-table.md").write_text("\n".join(rows) + "\n")
+      if ai_entries:
+          ai_section.extend(markdown_table(ai_entries))
+      else:
+          ai_section.append("_No Copilot or AI-related changelog entries in this period._")
+      ai_section.extend(["", "</details>"])
+      (base / "copilot-ai-section.md").write_text("\n".join(ai_section) + "\n")
       print(f"Fetched {len(sorted_entries)} entries between {start} and {end}: {counts}")
       PY
 
@@ -331,13 +380,17 @@ A deterministic pre-agent step has already fetched, deduplicated, filtered, and 
 }
 ```
 
-A companion file `/tmp/gh-aw/agent/changelog-table.md` contains the **complete, pre-rendered Markdown reference table** for every entry in the range.
+Two companion files contain deterministic, pre-rendered Markdown:
 
-**These two files are the ONLY source of truth.**
+- `/tmp/gh-aw/agent/copilot-ai-section.md` contains an expanded-by-default, collapsible quick-scan table filtered to Copilot and clearly AI-related entries.
+- `/tmp/gh-aw/agent/changelog-table.md` contains the **complete Markdown reference table** for every entry in the range.
+
+**These files are the ONLY source of truth.**
 
 - Do NOT fetch the RSS feed yourself. Do NOT use `web-fetch` or `curl` — they are blocked by the sandbox firewall.
 - Do NOT run Python or any other shell command to transform, select, or draft the data. Read the files directly and compose the issue from them.
-- Do NOT invent, guess, or recall any entry, title, URL, date, or tag from memory. Every value you write must be copied verbatim from this file.
+- Do NOT invent, guess, or recall any entry, title, URL, date, or tag from memory. Every value you write must come from these files.
+- For the "Copilot & AI Quick Scan" section, `cat /tmp/gh-aw/agent/copilot-ai-section.md` and reproduce its contents **verbatim, in full**. Do not add or remove entries based on your own interpretation.
 - For the "Complete Changelog Reference" section, `cat /tmp/gh-aw/agent/changelog-table.md` and reproduce its contents **verbatim, in full**. Do not regenerate, re-sort, re-word, shorten, sample, or summarize it, and never replace rows with `...`.
 - Take the entry counts for the stats line from `total` and `counts_by_type`.
 - Before creating the issue, verify that every `https://github.blog/changelog/...` URL in your issue body appears in `changelog-entries.json`. If any does not, you invented it — remove it and start again from the file.
@@ -401,7 +454,11 @@ If there are entries that might require action or attention (deprecations, retir
 
 Skip this section if nothing needs attention.
 
-#### 4. 📋 Complete Changelog Reference
+#### 4. 🤖 Copilot & AI Quick Scan
+
+Paste `/tmp/gh-aw/agent/copilot-ai-section.md` verbatim. This section is a subset of the complete changelog reference and is expanded by default for quick scanning, while remaining collapsible.
+
+#### 5. 📋 Complete Changelog Reference
 
 Create a table of ALL entries from the week. Each entry should appear once with all its tags listed.
 
@@ -429,7 +486,7 @@ Sort the table by date (newest first). Use short date format without year (e.g.,
 
 The table is long by design — copying all of it is the single most important part of this task.
 
-#### 5. Footer
+#### 6. Footer
 
 End with:
 ```

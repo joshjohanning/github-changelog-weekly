@@ -6,7 +6,7 @@ Stay on top of what's shipping to GitHub customers — without reading every cha
 
 ## What It Does
 
-### 🗓️ Weekly Summary (Every Tuesday ~10AM CT)
+### 🗓️ Weekly Summary (Every Monday at 6:45AM CT)
 
 An AI agent automatically:
 1. Fetches the [GitHub Changelog RSS feed](https://github.blog/changelog/feed/)
@@ -69,10 +69,12 @@ Run the weekly summary on-demand:
 gh aw run changelog-weekly
 ```
 
-Or with a custom lookback period:
+Or for an explicit backfill period:
 
 ```bash
-gh aw run changelog-weekly --input days_back=14
+gh aw run changelog-weekly \
+  --raw-field start_date=2026-08-04 \
+  --raw-field end_date=2026-08-11
 ```
 
 ## Configuration
@@ -84,7 +86,7 @@ Edit the `on.schedule` field in `changelog-weekly.md`:
 ```yaml
 # Examples:
 schedule:                                        # Default
-    - cron: "0 10 * * 2"
+    - cron: "45 6 * * 1"
       timezone: "America/Chicago"
 schedule:                                        # Wednesday morning
     - cron: "0 9 * * 3"
@@ -107,7 +109,7 @@ The weekly issue is automatically labeled with:
 
 ```
 ┌─────────────────────────────────────────────┐
-│          Tuesday ~10AM CT (cron)             │
+│         Monday 6:45AM CT (cron)              │
 │     or manual: gh aw run changelog-weekly    │
 └──────────────────┬──────────────────────────┘
                    │
