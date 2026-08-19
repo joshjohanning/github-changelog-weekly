@@ -15,6 +15,7 @@ permissions:
 tools:
   bash: ["echo", "cat", "head", "tail", "grep", "sed", "python3"]
   github:
+    mode: gh-proxy
     toolsets: [issues]
     min-integrity: none
 
@@ -28,6 +29,7 @@ safe-outputs:
     max: 1
 
 timeout-minutes: 5
+max-turns: 3
 ---
 
 # Changelog Post Summarizer

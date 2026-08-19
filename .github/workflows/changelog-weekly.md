@@ -30,6 +30,7 @@ model: auto
 engine:
   id: copilot
 timeout-minutes: 20
+max-turns: 3
 
 steps:
   - name: Compute changelog date range
@@ -326,6 +327,7 @@ steps:
 tools:
   bash: ["date", "echo", "cat", "head", "tail", "grep", "sort", "wc", "sed", "awk", "tr", "cut", "python3"]
   github:
+    mode: gh-proxy
     toolsets: [issues]
     min-integrity: none
 
