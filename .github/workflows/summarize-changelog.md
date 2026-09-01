@@ -29,7 +29,6 @@ safe-outputs:
     max: 1
 
 timeout-minutes: 5
-max-turns: 3
 ---
 
 # Changelog Post Summarizer
