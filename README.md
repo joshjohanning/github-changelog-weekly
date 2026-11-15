@@ -71,6 +71,10 @@ stable `gh-aw` release is available, it runs `gh aw upgrade` and opens a pull
 request with upgraded agent files, action pins, and recompiled workflow locks.
 It only proposes a PR; it does not merge it.
 
+Dependabot excludes generated `.lock.yml` workflows; their action pins are
+updated through `gh aw` instead. Handwritten workflows remain eligible for
+Dependabot updates.
+
 The shared action is pinned to a reviewed commit; the compiler version still
 defaults to the latest stable release. The manual trigger can select a release
 and optionally accept safe-update manifest changes with `approve` (off by
