@@ -43,7 +43,7 @@ jobs:
           permission-workflows: write
 
       - name: Upgrade agentic workflows
-        uses: joshjohanning/reusable-workflows/gh-aw-upgrade@6b83fa2bbb6185c5db32c573b25bc719a3fc27ff
+        uses: joshjohanning/reusable-workflows/gh-aw-upgrade@d64cc81e16fdacec26274d8030889cbfc2db28ee
         with:
           token: ${{ steps.app-token.outputs.token }}
           gh-aw-version: ${{ inputs.version || 'latest' }}
