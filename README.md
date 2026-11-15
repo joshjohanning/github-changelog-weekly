@@ -61,6 +61,21 @@ The AI agent will fetch the full post and reply with a detailed comment:
 
 4. **Push to your repository** and the workflows will activate on the configured schedule.
 
+### Automatic Agentic Workflow Upgrades
+
+The `Upgrade Agentic Workflows` workflow
+(`.github/workflows/gh-aw-upgrade.yml`) calls the shared
+[`gh-aw-upgrade.yml`](https://github.com/joshjohanning/reusable-workflows/blob/main/.github/workflows/gh-aw-upgrade.yml)
+reusable workflow every Tuesday (or manually from the Actions tab). When a newer
+stable `gh-aw` release is available, it runs `gh aw upgrade` and opens a pull
+request with upgraded agent files, action pins, and recompiled workflow locks.
+It only proposes a PR; it does not merge it.
+
+It reuses the repository's GitHub App (`APP_CLIENT_ID` variable and
+`APP_PRIVATE_KEY` secret). The App must be installed on this repository with
+**Contents**, **Pull requests**, and **Workflows** write access, because the
+built-in `GITHUB_TOKEN` cannot push updates to workflow files.
+
 ### Manual Trigger
 
 Run the weekly summary on-demand:

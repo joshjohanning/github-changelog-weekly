@@ -1,0 +1,21 @@
+name: Upgrade Agentic Workflows
+
+# Upgrades gh-aw via the shared reusable workflow and opens a PR for review.
+# The GitHub App (APP_CLIENT_ID / APP_PRIVATE_KEY) must be installed on this
+# repository with Contents, Pull requests, and Workflows write access.
+
+on:
+  schedule:
+    - cron: "0 15 * * 2" # Tuesdays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    uses: joshjohanning/reusable-workflows/.github/workflows/gh-aw-upgrade.yml@main
+    with:
+      app-client-id: ${{ vars.APP_CLIENT_ID }}
+    secrets:
+      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
