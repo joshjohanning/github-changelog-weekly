@@ -1,0 +1,50 @@
+name: Upgrade Agentic Workflows
+
+# Upgrades gh-aw via joshjohanning/reusable-workflows/gh-aw-upgrade and opens a
+# PR for review. The GitHub App must be installed on this repository with
+# Contents, Pull requests, and Workflows write access.
+
+on:
+  schedule:
+    - cron: "0 15 * * 2" # Tuesdays
+  workflow_dispatch:
+    inputs:
+      version:
+        description: gh-aw release to install, or latest for the latest stable release
+        type: string
+        default: latest
+        required: true
+      approve:
+        description: Accept gh-aw safe-update manifest changes (not PR approval)
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gh-aw-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade:
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+
+      - name: Upgrade agentic workflows
+        uses: joshjohanning/reusable-workflows/gh-aw-upgrade@d64cc81e16fdacec26274d8030889cbfc2db28ee
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          gh-aw-version: ${{ inputs.version || 'latest' }}
+          approve: ${{ inputs.approve || false }}
