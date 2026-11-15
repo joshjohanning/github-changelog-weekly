@@ -64,14 +64,14 @@ The AI agent will fetch the full post and reply with a detailed comment:
 ### Automatic Agentic Workflow Upgrades
 
 The `Upgrade Agentic Workflows` workflow
-(`.github/workflows/gh-aw-upgrade.yml`) calls the shared
-[`gh-aw-upgrade.yml`](https://github.com/joshjohanning/reusable-workflows/blob/main/.github/workflows/gh-aw-upgrade.yml)
-reusable workflow every Tuesday (or manually from the Actions tab). When a newer
+(`.github/workflows/gh-aw-upgrade.yml`) mints a GitHub App token and runs the shared
+[`gh-aw-upgrade`](https://github.com/joshjohanning/reusable-workflows/tree/main/gh-aw-upgrade)
+composite action every Tuesday (or manually from the Actions tab). When a newer
 stable `gh-aw` release is available, it runs `gh aw upgrade` and opens a pull
 request with upgraded agent files, action pins, and recompiled workflow locks.
 It only proposes a PR; it does not merge it.
 
-The reusable workflow is pinned to a reviewed commit; the compiler version still
+The shared action is pinned to a reviewed commit; the compiler version still
 defaults to the latest stable release. The manual trigger can select a release
 and optionally accept safe-update manifest changes with `approve` (off by
 default).

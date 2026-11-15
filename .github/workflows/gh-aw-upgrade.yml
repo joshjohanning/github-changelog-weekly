@@ -1,8 +1,8 @@
 name: Upgrade Agentic Workflows
 
-# Upgrades gh-aw via the shared reusable workflow and opens a PR for review.
-# The GitHub App (APP_CLIENT_ID / APP_PRIVATE_KEY) must be installed on this
-# repository with Contents, Pull requests, and Workflows write access.
+# Upgrades gh-aw via joshjohanning/reusable-workflows/gh-aw-upgrade and opens a
+# PR for review. The GitHub App must be installed on this repository with
+# Contents, Pull requests, and Workflows write access.
 
 on:
   schedule:
@@ -23,12 +23,28 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: gh-aw-upgrade
+  cancel-in-progress: false
+
 jobs:
   upgrade:
-    uses: joshjohanning/reusable-workflows/.github/workflows/gh-aw-upgrade.yml@a8f4af8d3c69ed3276d8fac7e2ee3f515bfbae26
-    with:
-      app-client-id: ${{ vars.APP_CLIENT_ID }}
-      gh-aw-version: ${{ inputs.version || 'latest' }}
-      approve: ${{ inputs.approve || false }}
-    secrets:
-      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+
+      - name: Upgrade agentic workflows
+        uses: joshjohanning/reusable-workflows/gh-aw-upgrade@6b83fa2bbb6185c5db32c573b25bc719a3fc27ff
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          gh-aw-version: ${{ inputs.version || 'latest' }}
+          approve: ${{ inputs.approve || false }}
