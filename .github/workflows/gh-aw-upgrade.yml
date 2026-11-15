@@ -8,14 +8,27 @@ on:
   schedule:
     - cron: "0 15 * * 2" # Tuesdays
   workflow_dispatch:
+    inputs:
+      version:
+        description: gh-aw release to install, or latest for the latest stable release
+        type: string
+        default: latest
+        required: true
+      approve:
+        description: Accept gh-aw safe-update manifest changes (not PR approval)
+        type: boolean
+        default: false
+        required: true
 
 permissions:
   contents: read
 
 jobs:
   upgrade:
-    uses: joshjohanning/reusable-workflows/.github/workflows/gh-aw-upgrade.yml@main
+    uses: joshjohanning/reusable-workflows/.github/workflows/gh-aw-upgrade.yml@a8f4af8d3c69ed3276d8fac7e2ee3f515bfbae26
     with:
       app-client-id: ${{ vars.APP_CLIENT_ID }}
+      gh-aw-version: ${{ inputs.version || 'latest' }}
+      approve: ${{ inputs.approve || false }}
     secrets:
       app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

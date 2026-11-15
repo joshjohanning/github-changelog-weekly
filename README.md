@@ -71,6 +71,11 @@ stable `gh-aw` release is available, it runs `gh aw upgrade` and opens a pull
 request with upgraded agent files, action pins, and recompiled workflow locks.
 It only proposes a PR; it does not merge it.
 
+The reusable workflow is pinned to a reviewed commit; the compiler version still
+defaults to the latest stable release. The manual trigger can select a release
+and optionally accept safe-update manifest changes with `approve` (off by
+default).
+
 It reuses the repository's GitHub App (`APP_CLIENT_ID` variable and
 `APP_PRIVATE_KEY` secret). The App must be installed on this repository with
 **Contents**, **Pull requests**, and **Workflows** write access, because the
