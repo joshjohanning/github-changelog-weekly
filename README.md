@@ -80,8 +80,9 @@ defaults to the latest stable release. The manual trigger can select a release
 and optionally accept safe-update manifest changes with `approve` (off by
 default).
 
-It reuses the repository's GitHub App (`APP_CLIENT_ID` variable and
-`APP_PRIVATE_KEY` secret). The App must be installed on this repository with
+It uses the dedicated Agentic Workflow Updater App
+(`GH_AW_UPDATER_APP_CLIENT_ID` variable and `GH_AW_UPDATER_APP_PRIVATE_KEY`
+secret). The App must be installed on this repository with
 **Contents**, **Pull requests**, and **Workflows** write access, because the
 built-in `GITHUB_TOKEN` cannot push updates to workflow files.
 
