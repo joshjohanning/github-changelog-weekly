@@ -1,0 +1,68 @@
+name: Publish Weekly Summaries Site
+
+# Builds the GitHub Pages site from the `changelog-summary` issues.
+# Issues created by the agentic workflow use GITHUB_TOKEN, which does not
+# trigger `issues` events, so the site also rebuilds after that workflow runs.
+
+on:
+  workflow_run:
+    workflows: ["📰 Weekly GitHub Changelog Summarizer"]
+    types: [completed]
+  issues:
+    types: [opened, edited, closed, reopened, deleted, labeled, unlabeled]
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: >-
+      github.event_name != 'issues' ||
+      contains(github.event.issue.labels.*.name, 'changelog-summary') ||
+      github.event.label.name == 'changelog-summary'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Build site
+        run: node site/build.mjs _site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -1,1 +1,3 @@
 .github/aw/logs/
+_site/
+.playwright-mcp/
